@@ -1,510 +1,498 @@
+
 # Intelligent Document & Conversational AI API
 
-A modular backend application built with **FastAPI** that combines document ingestion, semantic search, conversational Retrieval-Augmented Generation (RAG), Redis-based conversation memory, and LLM-powered interview booking.
+A modular backend application built with **FastAPI** that combines document ingestion, semantic search, Retrieval-Augmented Generation (RAG), conversational memory, and LLM-powered interview booking.
 
-The system allows users to upload documents, process and semantically search their contents, ask questions about the uploaded information through a conversational interface, and handle interview-booking requests through the same conversational API.
+The system allows users to upload PDF and TXT documents, process their contents, generate semantic embeddings, retrieve relevant information, and interact with the documents through a conversational interface. It also supports multi-turn interview-booking conversations using LLM-based intent detection and information extraction.
 
 The project was developed as a backend-focused implementation of the PalmMind technical assignment.
 
----
+## Where the project stands
 
-## Overview
+The current implementation includes:
 
-The application provides two primary capabilities:
-
-1. **Document Intelligence & Conversational RAG**
-   - Upload PDF and TXT documents
-   - Extract and process document text
-   - Apply selectable chunking strategies
-   - Generate semantic embeddings
-   - Store embeddings in Qdrant
-   - Store document metadata in SQLite
-   - Ask questions about uploaded documents
-   - Retrieve relevant document content using semantic similarity
-   - Generate contextual answers using an LLM
-
-2. **Conversational Interview Booking**
-   - Detect interview-booking requests
-   - Extract booking information using an LLM
-   - Collect missing information across multiple messages
-   - Maintain conversation and booking state with Redis
-   - Validate booking information
-   - Persist completed bookings in SQLite
-
----
-
-## Key Features
-
-### Document Ingestion
-
-- PDF and TXT file support
-- PDF text extraction using `pypdf`
-- Two selectable chunking strategies:
-  - Fixed-size chunking with overlap
-  - Sentence-based chunking
+- PDF and TXT document ingestion
+- PDF text extraction
+- Configurable document chunking
+- Fixed-size chunking with overlap
+- Sentence-based chunking
 - Sentence Transformer embeddings
 - Qdrant vector storage
-- SQLite document and chunk metadata
-
-### Document Question Answering
-
+- Semantic similarity search
 - Custom Retrieval-Augmented Generation pipeline
-- Semantic similarity search using Qdrant
-- Retrieval of relevant document chunks
-- Context construction from retrieved information
-- LLM-generated responses
-- Conversation-aware document questions
-- No `RetrievalQAChain` or pre-built RAG chain
-
-### Conversational AI
-
-- Multi-turn conversations
-- Conversation history stored in Redis
-- Context-aware responses
+- Redis-based conversational memory
+- LLM-powered document question answering
 - Intent detection
-- LLM-based response generation
-- Conversation-specific state management
+- Multi-turn interview booking
+- LLM-based booking information extraction
+- SQLite persistence
+- Automated tests for core services
+- FastAPI REST API
+- Interactive Swagger/OpenAPI documentation
 
-### Interview Booking
+## What the system does
 
-- Natural-language booking requests
-- LLM-based extraction of:
-  - Name
-  - Email
-  - Date
-  - Time
-- Multi-turn collection of missing information
-- Email validation
-- Date and time parsing
-- Booking persistence in SQLite
-- Temporary booking state stored in Redis
+| Component | Responsibility |
+|---|---|
+| Document Ingestion | Upload and process PDF/TXT documents |
+| Text Extraction | Extract text from uploaded documents |
+| Chunking | Split documents using fixed-size or sentence-based strategies |
+| Embeddings | Convert document chunks into semantic vectors |
+| Qdrant | Store and retrieve document embeddings |
+| RAG Pipeline | Retrieve relevant document context and generate answers |
+| Redis | Maintain conversation history and temporary booking state |
+| Intent Detection | Identify document questions and booking requests |
+| Booking System | Extract, validate, and store interview details |
+| SQLite | Persist document metadata, chunks, and bookings |
+| FastAPI | Expose the system through REST endpoints |
 
----
+## RAG Pipeline
 
-## Architecture
+Document Upload → Text Extraction → Chunking → Embedding Generation → Qdrant Vector Storage → Query Embedding → Semantic Search → Relevant Document Chunks → Conversation History → Context Construction → LLM → Generated Answer
 
-```text
-                         ┌─────────────────────┐
-                         │      FastAPI        │
-                         │       REST API      │
-                         └──────────┬──────────┘
-                                    │
-                 ┌──────────────────┴──────────────────┐
-                 │                                     │
-                 ▼                                     ▼
-        ┌──────────────────┐                  ┌──────────────────┐
-        │ Document Upload  │                  │   Chat Endpoint  │
-        └────────┬─────────┘                  └────────┬─────────┘
-                 │                                     │
-                 ▼                                     ▼
-        ┌──────────────────┐                  ┌──────────────────┐
-        │ Text Extraction  │                  │ Intent Detection │
-        └────────┬─────────┘                  └────────┬─────────┘
-                 │                                     │
-                 ▼                         ┌───────────┴───────────┐
-        ┌──────────────────┐               │                       │
-        │ Chunking         │               ▼                       ▼
-        │ Fixed/Sentence   │        ┌──────────────┐       ┌──────────────┐
-        └────────┬─────────┘        │ RAG Pipeline │       │    Booking   │
-                 │                  └──────┬───────┘       └──────┬───────┘
-                 ▼                         │                      │
-        ┌──────────────────┐               ▼                      ▼
-        │ Embeddings       │        ┌──────────────┐       ┌──────────────┐
-        │ MiniLM           │        │    Qdrant    │       │    SQLite    │
-        └────────┬─────────┘        │ Vector Store │       │   Bookings   │
-                 │                  └──────────────┘       └──────────────┘
-                 ▼
-        ┌──────────────────┐
-        │     Qdrant       │
-        │  Vector Storage  │
-        └──────────────────┘
+The RAG pipeline is implemented using individual retrieval and generation components rather than relying on a pre-built `RetrievalQAChain`.
 
-                    Redis
-                      │
-                      ├── Conversation history
-                      └── Temporary booking state
-Technology Stack
-Technology	Purpose
-Python	Backend development
-FastAPI	REST API framework
-SQLAlchemy	Database ORM
-SQLite	Metadata and booking persistence
-Qdrant	Vector database
-Redis	Conversation memory and state
-Sentence Transformers	Text embeddings
-PyTorch	Embedding model runtime
-Ollama	Local LLM inference
-Llama 3.2 3B	LLM used by the application
-pypdf	PDF text extraction
-pytest	Testing
-Project Structure
-Intelligent-Document-Conversational-AI/
-│
-├── app/
-│   ├── api/
-│   │   └── routes/
-│   │       ├── chat.py
-│   │       └── documents.py
-│   │
-│   ├── core/
-│   │   └── config.py
-│   │
-│   ├── db/
-│   │   ├── base.py
-│   │   ├── init_db.py
-│   │   ├── session.py
-│   │   └── test_db.py
-│   │
-│   ├── models/
-│   │   ├── booking.py
-│   │   └── document.py
-│   │
-│   ├── services/
-│   │   ├── booking_extractor.py
-│   │   ├── booking_parser.py
-│   │   ├── booking_service.py
-│   │   ├── booking_validation.py
-│   │   ├── chunk_service.py
-│   │   ├── document_service.py
-│   │   ├── embedding_service.py
-│   │   ├── intent_service.py
-│   │   ├── llm_service.py
-│   │   ├── pdf_service.py
-│   │   ├── rag_service.py
-│   │   ├── redis_service.py
-│   │   ├── search_service.py
-│   │   └── vector_service.py
-│   │
-│   ├── utils/
-│   │
-│   └── main.py
-│
-├── tests/
-│
-├── .env.example
-├── .gitignore
-├── pyproject.toml
-├── pytest.ini
-├── requirements.txt
-└── README.md
-Requirements
+## Conversational Booking
 
-Before running the application, install:
-
-Python 3.12+
-Redis
-Ollama
-Ollama model: llama3.2:3b
-
-The application currently uses local Redis and Ollama services.
-
-Installation
-1. Clone the repository
-git clone https://github.com/AjurshaDahal/PalmMindTASK.git
-cd PalmMindTASK
-
-Replace the repository name above if the GitHub repository is renamed.
-
-2. Create a virtual environment
-python -m venv .venv
-source .venv/bin/activate
-
-On Windows:
-
-.venv\Scripts\activate
-3. Install Python dependencies
-pip install -r requirements.txt
-4. Initialize the database
-python -m app.db.init_db
-Redis Setup
-
-Redis is used for:
-
-Conversation history
-Temporary interview-booking state
-Multi-turn conversations
-
-The application expects Redis to be available at:
-
-localhost:6379
-
-Start Redis before using the chat endpoints.
-
-Ollama Setup
-
-The application uses Ollama for local LLM inference.
-
-Install the required model:
-
-ollama pull llama3.2:3b
-
-Make sure Ollama is running before using the conversational and booking functionality.
-
-Running the Application
-
-Start the FastAPI development server:
-
-uvicorn app.main:app --reload
-
-The API will be available at:
-
-http://127.0.0.1:8000
-API Documentation
-
-FastAPI automatically provides interactive API documentation.
-
-Swagger UI
-http://127.0.0.1:8000/docs
-OpenAPI Specification
-http://127.0.0.1:8000/openapi.json
-API Endpoints
-1. Document Ingestion
-POST /documents/upload
-
-Uploads a PDF or TXT document and processes it for semantic retrieval.
-
-Supported file types
-.pdf
-.txt
-Chunking strategies
-Fixed-size
-fixed
-
-Uses fixed character-size chunks with overlap.
-
-Sentence-based
-sentence
-
-Groups a configurable number of sentences into each chunk.
-
-Example
-
-Using Swagger UI, provide:
-
-file
-strategy
-
-Example:
-
-fixed
-
-The response includes information such as:
-
-{
-  "id": 1,
-  "filename": "document.pdf",
-  "status": "processed",
-  "chunking_strategy": "fixed",
-  "chunk_count": 12
-}
-2. Conversational RAG
-POST /chat
-
-Accepts a conversation ID and user message.
-
-Request
-{
-  "conversation_id": "conversation-1",
-  "message": "What does the document say about cloud computing?"
-}
-Example response
-{
-  "conversation_id": "conversation-1",
-  "intent": "question",
-  "answer": "..."
-}
-
-The RAG pipeline:
-
-Receives the user's question
-Generates an embedding for the question
-Searches Qdrant for semantically similar document chunks
-Builds context from the retrieved chunks
-Retrieves previous conversation messages from Redis
-Sends the context, conversation history, and question to the LLM
-Returns the generated answer
-Stores the new conversation messages in Redis
-
-This allows the system to answer questions about uploaded documents while maintaining conversational context.
-
-3. Conversational Interview Booking
-
-The same /chat endpoint also supports interview-booking conversations.
+The same conversational API also supports interview booking.
 
 The system can collect:
 
-Name
-Email
-Date
-Time
+- Name
+- Email
+- Date
+- Time
 
 Information can be provided across multiple messages.
 
-For example:
+Example conversation:
 
-User: I want to book an interview.
+> User: I want to book an interview.
+>
+> Assistant: Sure! I need your name, email, preferred date, and preferred interview time.
+>
+> User: My name is Ajursha.
+>
+> User: My email is ajursha@example.com.
+>
+> User: October 5, 2026.
+>
+> User: 2 PM.
 
-Assistant: Sure! I still need your name, email address,
-preferred interview date, and preferred interview time.
+The application maintains incomplete booking information in Redis until all required information is collected. Once complete, the information is validated and persisted in SQLite.
 
-User: My name is Ajursha.
+## Technology Stack
 
-User: My email is ajursha@example.com.
+- **Python** — Backend development
+- **FastAPI** — REST API framework
+- **SQLAlchemy** — Database ORM
+- **SQLite** — Persistent metadata and booking storage
+- **Qdrant** — Vector database
+- **Redis** — Conversation memory and temporary state
+- **Sentence Transformers** — Text embeddings
+- **PyTorch** — Embedding model runtime
+- **Ollama** — Local LLM inference
+- **Llama 3.2 3B** — Local language model
+- **pypdf** — PDF text extraction
+- **pytest** — Automated testing
 
-User: October 5, 2026.
+## Project Structure
 
-User: 2 PM.
+    intelligent-document-conversational-ai/
+    │
+    ├── app/
+    │   ├── api/
+    │   │   └── routes/
+    │   │       ├── chat.py
+    │   │       └── documents.py
+    │   │
+    │   ├── core/
+    │   │   └── config.py
+    │   │
+    │   ├── db/
+    │   │   ├── base.py
+    │   │   ├── init_db.py
+    │   │   ├── session.py
+    │   │   └── test_db.py
+    │   │
+    │   ├── models/
+    │   │   ├── booking.py
+    │   │   └── document.py
+    │   │
+    │   ├── services/
+    │   │   ├── booking_extractor.py
+    │   │   ├── booking_parser.py
+    │   │   ├── booking_service.py
+    │   │   ├── booking_validation.py
+    │   │   ├── chunk_service.py
+    │   │   ├── document_service.py
+    │   │   ├── embedding_service.py
+    │   │   ├── intent_service.py
+    │   │   ├── llm_service.py
+    │   │   ├── pdf_service.py
+    │   │   ├── rag_service.py
+    │   │   ├── redis_service.py
+    │   │   ├── search_service.py
+    │   │   └── vector_service.py
+    │   │
+    │   ├── utils/
+    │   │
+    │   └── main.py
+    │
+    ├── tests/
+    │
+    ├── .env.example
+    ├── .gitignore
+    ├── pyproject.toml
+    ├── pytest.ini
+    ├── requirements.txt
+    └── README.md
 
-The booking state is maintained in Redis until all required information is collected.
+## Quick Setup for Developers
 
-Once the information is complete:
+### Requirements
 
-Booking details are validated
-Date and time are parsed
-The booking is stored in SQLite
-Temporary Redis booking state is cleared
-A booking confirmation is returned
-Data Storage
+Before running the application, install:
 
-The application uses three storage systems for different purposes.
+- Python 3.12+
+- Redis
+- Ollama
+- Ollama model: `llama3.2:3b`
 
-SQLite
+The application currently uses local Redis and Ollama services.
 
-Stores persistent application data:
+### Clone the Repository
 
-Documents
-Document chunks
-Interview bookings
-Qdrant
+    git clone https://github.com/AjurshaDahal/PalmMindTASK.git
+    cd PalmMindTASK
 
-Stores:
+Update the repository name above if the GitHub repository has been renamed.
 
-Document chunk embeddings
-Document IDs
-Chunk text metadata
-Redis
+### Create a Virtual Environment
 
-Stores temporary and conversational state:
+    python -m venv .venv
+    source .venv/bin/activate
 
-Chat history
-Interview booking state
-Embedding Model
+On Windows:
+
+    .venv\Scripts\activate
+
+### Install Dependencies
+
+    pip install -r requirements.txt
+
+### Initialize the Database
+
+    python -m app.db.init_db
+
+## Redis Setup
+
+Redis is used for:
+
+- Conversation history
+- Multi-turn conversation state
+- Temporary interview-booking state
+
+The application expects Redis to be available at:
+
+    localhost:6379
+
+Start Redis before using the chat endpoints.
+
+## Ollama Setup
+
+The application uses Ollama for local LLM inference.
+
+Pull the required model:
+
+    ollama pull llama3.2:3b
+
+Make sure Ollama is running before using the conversational and booking functionality.
+
+## Running the Application
+
+Start the FastAPI development server:
+
+    uvicorn app.main:app --reload
+
+The API will be available at:
+
+    http://127.0.0.1:8000
+
+## API Documentation
+
+FastAPI automatically provides interactive API documentation.
+
+### Swagger UI
+
+    http://127.0.0.1:8000/docs
+
+### OpenAPI Specification
+
+    http://127.0.0.1:8000/openapi.json
+
+## API Endpoints
+
+### Document Upload
+
+`POST /documents/upload`
+
+Uploads and processes a PDF or TXT document for semantic retrieval.
+
+Supported formats:
+
+- `.pdf`
+- `.txt`
+
+Available chunking strategies:
+
+- `fixed`
+- `sentence`
+
+Example response:
+
+    {
+      "id": 1,
+      "filename": "document.pdf",
+      "status": "processed",
+      "chunking_strategy": "fixed",
+      "chunk_count": 12
+    }
+
+### Conversational RAG
+
+`POST /chat`
+
+Accepts a conversation ID and user message.
+
+Example request:
+
+    {
+      "conversation_id": "conversation-1",
+      "message": "What does the document say about cloud computing?"
+    }
+
+Example response:
+
+    {
+      "conversation_id": "conversation-1",
+      "intent": "question",
+      "answer": "..."
+    }
+
+The RAG process:
+
+1. Receives the user's question
+2. Generates an embedding for the question
+3. Searches Qdrant for semantically similar document chunks
+4. Retrieves relevant document content
+5. Retrieves previous conversation history from Redis
+6. Builds the LLM context
+7. Sends the context, conversation history, and question to the LLM
+8. Generates a response
+9. Stores the conversation in Redis
+
+### Interview Booking
+
+Interview booking is handled through the same conversational `/chat` endpoint.
+
+The system detects booking-related requests and extracts:
+
+- Name
+- Email
+- Date
+- Time
+
+Missing information can be collected across multiple messages.
+
+The booking flow is:
+
+    User Request
+         │
+         ▼
+    Intent Detection
+         │
+         ▼
+    Booking Information Extraction
+         │
+         ▼
+    Check Missing Fields
+         │
+         ├── Missing ──► Ask User
+         │
+         ▼
+    Validation
+         │
+         ▼
+    Date/Time Parsing
+         │
+         ▼
+    Store Booking in SQLite
+         │
+         ▼
+    Clear Temporary Redis State
+         │
+         ▼
+    Return Confirmation
+
+## Data Storage
+
+The application uses different storage technologies for different responsibilities.
+
+### SQLite
+
+Used for persistent application data:
+
+- Documents
+- Document chunks
+- Interview bookings
+
+### Qdrant
+
+Used as the vector database for:
+
+- Document embeddings
+- Document IDs
+- Chunk metadata
+- Semantic similarity search
+
+### Redis
+
+Used for temporary and conversational state:
+
+- Conversation history
+- Multi-turn conversation state
+- Temporary interview-booking information
+
+## Embedding Model
 
 The project uses:
 
-all-MiniLM-L6-v2
+`all-MiniLM-L6-v2`
 
 from Sentence Transformers.
 
-The generated embeddings are stored in Qdrant and compared using cosine similarity for semantic retrieval.
+Document chunks and user queries are converted into vector embeddings.
 
-Testing
+Qdrant uses these embeddings to perform semantic similarity search using cosine similarity.
 
-Tests are included throughout the project for core services including:
+## Testing
 
-Database
-Booking extraction
-Booking parsing
-Booking service
-Chunking
-Embeddings
-Intent detection
-LLM service
-PDF extraction
-RAG
-Redis
-Search
-Vector storage
+The project includes tests for core application components, including:
+
+- Database
+- Booking extraction
+- Booking parsing
+- Booking service
+- Chunking
+- Embeddings
+- Intent detection
+- LLM service
+- PDF extraction
+- RAG
+- Redis
+- Search
+- Vector storage
 
 Run the test suite with:
 
-python -m pytest
+    python -m pytest
 
 Pytest discovery is configured through:
 
-pytest.ini
-Configuration
+    pytest.ini
 
-An example environment configuration is provided in:
+## Configuration
 
-.env.example
+Environment configuration is provided through:
 
-Do not commit private environment variables or credentials.
+    .env.example
 
-Runtime files such as databases, Qdrant storage, Redis dumps, uploaded documents, archives, virtual environments, and Python cache files are excluded through .gitignore.
+Do not commit private environment variables, credentials, or API keys.
 
-Design Considerations
-Modular Architecture
+Runtime files such as databases, Qdrant storage, Redis dumps, uploaded documents, archives, virtual environments, and Python cache files should be excluded through `.gitignore`.
 
-The application separates:
+## Design Considerations
 
-API routes
-Database configuration
-Models
-Document processing
-Embeddings
-Vector search
-RAG
-Redis memory
-Booking logic
-LLM interaction
+### Modular Architecture
 
-This keeps individual components easier to test and maintain.
+The application separates responsibilities across:
 
-Custom RAG Pipeline
+- API routes
+- Database configuration
+- Data models
+- Document processing
+- PDF extraction
+- Chunking
+- Embedding generation
+- Vector search
+- RAG
+- Redis memory
+- Intent detection
+- Booking logic
+- LLM interaction
 
-The RAG implementation is intentionally built using individual retrieval and generation components rather than a pre-built RetrievalQAChain.
+This keeps individual components easier to test, maintain, and extend.
+
+### Custom RAG Pipeline
+
+The RAG implementation is built from individual retrieval and generation components rather than using a pre-built `RetrievalQAChain`.
 
 This provides explicit control over:
 
-Document ingestion
-Chunking
-Embedding generation
-Vector retrieval
-Context construction
-Conversation memory
-LLM generation
-Multi-turn Conversations
+- Document ingestion
+- Text extraction
+- Chunking
+- Embedding generation
+- Vector retrieval
+- Context construction
+- Conversation memory
+- LLM generation
+
+### Multi-Turn Conversations
 
 Redis allows conversation history and partially completed booking information to persist between requests using a conversation ID.
 
-Local-first Development
+### Local-First Development
 
-Qdrant, SQLite, Redis, and Ollama can be used locally, making the project suitable for development without requiring a hosted vector database or hosted LLM API.
+The application can run locally using:
 
-Limitations / Future Improvements
+- SQLite
+- Qdrant
+- Redis
+- Ollama
 
-Potential future improvements include:
+This allows development without requiring a hosted vector database or external LLM API.
 
-More advanced document parsing for complex PDF layouts
-More sophisticated semantic chunking
-Configurable embedding and LLM models through environment variables
-Hosted Qdrant/Redis support
-Authentication and authorization
-Booking conflict detection
-Time-zone aware interview scheduling
-Improved API error handling
-Automated CI testing
-Expanded integration and API tests
-License
+## Limitations & Future Improvements
 
-This project was developed as a technical assignment and is intended for evaluation and demonstration purposes.
+Potential improvements include:
 
+- Advanced PDF parsing for complex layouts
+- Table and image-aware document extraction
+- More sophisticated semantic chunking
+- Configurable embedding models
+- Configurable LLM providers
+- Hosted Qdrant and Redis support
+- Authentication and authorization
+- Booking conflict detection
+- Time-zone-aware scheduling
+- Improved API error handling
+- Automated CI/CD
+- Expanded integration and API tests
+- Containerized deployment
+- Cloud deployment
 
-### One important thing
+## Important Notes
 
-I **wouldn't rename every occurrence of `PalmMindTASK` inside the actual code/folder yet** just because we changed the README title.
+- This repository is primarily a backend-focused implementation.
+- The document intelligence and conversational RAG components are the core functionality of the project.
+- Interview booking is implemented as an additional conversational capability.
+- Qdrant, Redis, SQLite, and Ollama can be run locally.
+- Runtime databases, vector storage, uploaded documents, virtual environments, and cache files should not be committed to Git.
+- The project was developed as a technical assignment and is intended for evaluation, learning, and demonstration purposes.
 
-There are three separate things:
+## License
 
-- **Project display name:** `Intelligent Document & Conversational AI API`
-- **Local folder:** can be renamed
-- **GitHub repository:** `PalmMindTASK` → whatever new repo name you choose
-
-If you want the GitHub repo to look professional on your CV, I'd use:
-
-> **`intelligent-document-conversational-ai`**
-
-And the README title:
-
-> **Intelligent Document & Conversational AI API**
+This project was developed as a technical assignment and is intended for evaluation, learning, and demonstration purposes.
+```

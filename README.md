@@ -71,9 +71,9 @@ Example conversation:
 >
 > Assistant: Sure! I need your name, email, preferred date, and preferred interview time.
 >
-> User: My name is Ajursha.
+> User: My name is ......
 >
-> User: My email is ajursha@example.com.
+> User: My email is ....@....com.
 >
 > User: October 5, 2026.
 >

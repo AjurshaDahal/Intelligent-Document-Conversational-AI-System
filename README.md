@@ -5,7 +5,6 @@ A modular backend application built with **FastAPI** that combines document inge
 
 The system allows users to upload PDF and TXT documents, process their contents, generate semantic embeddings, retrieve relevant information, and interact with the documents through a conversational interface. It also supports multi-turn interview-booking conversations using LLM-based intent detection and information extraction.
 
-The project was developed as a backend-focused implementation of the PalmMind technical assignment.
 
 ## Where the project stands
 
